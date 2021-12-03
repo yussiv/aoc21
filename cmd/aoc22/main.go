@@ -10,8 +10,9 @@ import (
 )
 
 type Day interface {
-	Task1(input []string) int
-	Task2(input []string) int
+	Task1() int
+	Task2() int
+	SetInput(input []string)
 }
 
 func getSortedMapKeys(dayMap map[int]Day) []int {
@@ -25,16 +26,19 @@ func getSortedMapKeys(dayMap map[int]Day) []int {
 	return keys
 }
 
-func printTasksForDay(day int, input []string) {
-	fmt.Printf("-- Day %d --\ntask 1: %d\ntask 2: %d\n",
+func runTasksForDay(day int, input []string) {
+	done[day].SetInput(input)
+	fmt.Printf("-- Day %d --\ntask 1: %d\ntask 2: %d\n\n",
 		day,
-		done[day].Task1(input),
-		done[day].Task2(input),
+		done[day].Task1(),
+		done[day].Task2(),
 	)
 }
 
 var done = map[int]Day{
-	1: mission.Day1{},
+	1: &mission.Day1{},
+	2: &mission.Day2{},
+	3: &mission.Day3{},
 }
 
 func main() {
@@ -48,12 +52,12 @@ func main() {
 		keys := getSortedMapKeys(done)
 		for _, i := range keys {
 			input := util.GetInput("", i) // TODO: input directory flag
-			printTasksForDay(i, input)
+			runTasksForDay(i, input)
 		}
 	} else if done[day] == nil {
 		fmt.Println("I'm afraid the elves are on their own that day.")
 	} else {
 		input := util.GetInput(inputPath, day)
-		printTasksForDay(day, input)
+		runTasksForDay(day, input)
 	}
 }

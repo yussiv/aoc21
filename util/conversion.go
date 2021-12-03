@@ -16,3 +16,16 @@ func StringsToInts(strs []string) []int {
 	}
 	return ints
 }
+
+func BinaryStringsToIntegers(strs []string) []uint16 {
+	result := make([]uint16, len(strs))
+	n := len(strs[0])
+	for i, str := range strs {
+		for j, c := range str {
+			if c == '1' {
+				result[i] += (1 << (n - 1 - j))
+			}
+		}
+	}
+	return result
+}
