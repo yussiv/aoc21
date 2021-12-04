@@ -1,121 +1,121 @@
 package mission
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 )
 
 type bingoBoard struct {
-	horizontalSums [5]int
-	verticalSums   [5]int
-	numberPosition map[int][2]int
-	hasBingo       bool
+	horizontalSums    [5]int
+	verticalSums      [5]int
+	numberCoordinates map[int][2]int
+	hasBingo          bool
 }
 
 type Day4 struct {
-	input          []string
-	boards         []bingoBoard
-	drawnNumbers   []int
-	lastDrawnIndex int
-	numberMap      map[int][]int
+	input                  []string
+	boards                 []*bingoBoard
+	drawnNumbers           []int
+	boardsContainingNumber map[int][]*bingoBoard
+	firstScore             int
+	lastScore              int
 }
 
 func (d *Day4) SetInput(input []string) {
 	d.input = input
 	d.parseInput()
+	d.calculateFirstAndLastBingoBoardScores()
 }
 
 func (d *Day4) Task1() int {
-	for i, num := range d.drawnNumbers {
-		d.lastDrawnIndex = i
-		boardsWithNumber := d.numberMap[num]
-		for _, boardIndex := range boardsWithNumber {
-			board := &d.boards[boardIndex]
-			position := board.numberPosition[num]
-			board.horizontalSums[position[0]] -= num
-			board.verticalSums[position[1]] -= num
-			if board.horizontalSums[position[0]] == 0 || board.verticalSums[position[1]] == 0 {
-				fmt.Println("BINGO!")
-				board.hasBingo = true
-				leftoverSum := 0
-				for _, value := range board.horizontalSums {
-					leftoverSum += value
-				}
-				return num * leftoverSum
-			}
-		}
-	}
-	return 0
+	return d.firstScore
 }
 
 func (d *Day4) Task2() int {
+	return d.lastScore
+}
+
+func (d *Day4) calculateFirstAndLastBingoBoardScores() {
+	var firstBoard *bingoBoard
+	var firstNumber int
 	var lastBoard *bingoBoard
 	var lastNumber int
-	// continue where task 1 left of, so we don't need to build the data structure again
-	for i := d.lastDrawnIndex + 1; i < len(d.drawnNumbers); i++ {
-		num := d.drawnNumbers[i]
-		boardsWithNumber := d.numberMap[num]
-		for _, boardIndex := range boardsWithNumber {
-			board := &d.boards[boardIndex]
+
+	for _, number := range d.drawnNumbers {
+		boardsContainingNumber := d.boardsContainingNumber[number]
+		for _, board := range boardsContainingNumber {
 			if board.hasBingo {
 				continue
 			}
-			position := board.numberPosition[num]
-			board.horizontalSums[position[0]] -= num
-			board.verticalSums[position[1]] -= num
-			if board.horizontalSums[position[0]] == 0 || board.verticalSums[position[1]] == 0 {
+			x, y := getCoordinates(board.numberCoordinates[number])
+			board.horizontalSums[x] -= number
+			board.verticalSums[y] -= number
+			if board.horizontalSums[x] == 0 || board.verticalSums[y] == 0 {
 				// bingo!
+				if firstBoard == nil {
+					firstBoard = board
+					firstNumber = number
+				}
 				board.hasBingo = true
 				lastBoard = board
-				lastNumber = num
+				lastNumber = number
 			}
 		}
 	}
-	leftoverSum := 0
-	for _, value := range lastBoard.horizontalSums {
-		leftoverSum += value
+	firstBoardSum := d.calculateBoardSum(firstBoard)
+	lastBoardSum := d.calculateBoardSum(lastBoard)
+
+	d.firstScore = firstBoardSum * firstNumber
+	d.lastScore = lastBoardSum * lastNumber
+}
+
+func (Day4) calculateBoardSum(board *bingoBoard) int {
+	sum := 0
+	for _, value := range board.horizontalSums {
+		sum += value
 	}
-	return lastNumber * leftoverSum
+	return sum
+}
+
+func getCoordinates(coordSlice [2]int) (x int, y int) {
+	return coordSlice[0], coordSlice[1]
 }
 
 func (d *Day4) parseInput() {
 	d.drawnNumbers = d.parseDrawnNumbers(d.input[0])
-	// keep track of which boards contain which bingo number from range 0-99
-	d.numberMap = make(map[int][]int, 100)
+	d.boardsContainingNumber = make(map[int][]*bingoBoard, 100)
 
 	// input loader strips empty rows, so bingo board takes 5 lines instead of 6
-	d.boards = make([]bingoBoard, len(d.input)/5)
+	d.boards = make([]*bingoBoard, len(d.input)/5)
 	for i := range d.boards {
-		d.boards[i] = *d.createBingoBoard(i)
+		d.boards[i] = d.createBingoBoard(i)
 	}
 }
 
 func (d *Day4) createBingoBoard(index int) *bingoBoard {
-	offset := 1 + index*5
+	inputOffset := 1 + index*5
 	board := new(bingoBoard)
-	board.numberPosition = make(map[int][2]int, 25)
-	for i := offset; i < offset+5; i++ {
-		x := i - offset
+	board.numberCoordinates = make(map[int][2]int, 25)
+	for i := inputOffset; i < inputOffset+5; i++ {
+		x := i - inputOffset
 		row := strings.Fields(d.input[i])
 		for y, num := range row {
 			intVal, _ := strconv.Atoi(num)
 			board.horizontalSums[x] += intVal
 			board.verticalSums[y] += intVal
-			board.numberPosition[intVal] = [2]int{x, y}
-			// store information that this board contains the current value
-			d.numberMap[intVal] = append(d.numberMap[intVal], index)
+			board.numberCoordinates[intVal] = [2]int{x, y}
+			d.boardsContainingNumber[intVal] = append(d.boardsContainingNumber[intVal], board)
 		}
 	}
 	return board
 }
 
 func (Day4) parseDrawnNumbers(str string) []int {
-	splitStr := strings.Split(strings.TrimSpace(str), ",")
-	nums := make([]int, len(splitStr))
-	for i, numStr := range splitStr {
-		value, _ := strconv.Atoi(numStr)
-		nums[i] = value
+	numberStrings := strings.Split(strings.TrimSpace(str), ",")
+	numbers := make([]int, len(numberStrings))
+	for i, numberStr := range numberStrings {
+		value, _ := strconv.Atoi(numberStr)
+		numbers[i] = value
 	}
-	return nums
+	return numbers
 }
