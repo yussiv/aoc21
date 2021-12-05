@@ -8,7 +8,7 @@ import (
 type bingoBoard struct {
 	horizontalSums    [5]int
 	verticalSums      [5]int
-	numberCoordinates map[int][2]int
+	numberCoordinates map[int]Coord
 	hasBingo          bool
 }
 
@@ -47,7 +47,8 @@ func (d *Day4) calculateFirstAndLastBingoBoardScores() {
 			if board.hasBingo {
 				continue
 			}
-			x, y := getCoordinates(board.numberCoordinates[number])
+			x := board.numberCoordinates[number].X
+			y := board.numberCoordinates[number].Y
 			board.horizontalSums[x] -= number
 			board.verticalSums[y] -= number
 			if board.horizontalSums[x] == 0 || board.verticalSums[y] == 0 {
@@ -77,10 +78,6 @@ func (Day4) calculateBoardSum(board *bingoBoard) int {
 	return sum
 }
 
-func getCoordinates(coordSlice [2]int) (x int, y int) {
-	return coordSlice[0], coordSlice[1]
-}
-
 func (d *Day4) parseInput() {
 	d.drawnNumbers = d.parseDrawnNumbers(d.input[0])
 	d.boardsContainingNumber = make(map[int][]*bingoBoard, 100)
@@ -95,7 +92,7 @@ func (d *Day4) parseInput() {
 func (d *Day4) createBingoBoard(index int) *bingoBoard {
 	inputOffset := 1 + index*5
 	board := new(bingoBoard)
-	board.numberCoordinates = make(map[int][2]int, 25)
+	board.numberCoordinates = make(map[int]Coord, 25)
 	for i := inputOffset; i < inputOffset+5; i++ {
 		x := i - inputOffset
 		row := strings.Fields(d.input[i])
@@ -103,7 +100,7 @@ func (d *Day4) createBingoBoard(index int) *bingoBoard {
 			intVal, _ := strconv.Atoi(num)
 			board.horizontalSums[x] += intVal
 			board.verticalSums[y] += intVal
-			board.numberCoordinates[intVal] = [2]int{x, y}
+			board.numberCoordinates[intVal] = Coord{X: x, Y: y}
 			d.boardsContainingNumber[intVal] = append(d.boardsContainingNumber[intVal], board)
 		}
 	}
