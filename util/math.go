@@ -6,3 +6,11 @@ func Abs(i int) int {
 	}
 	return i
 }
+
+func IntPow(x, y int) int {
+	result := 1
+	for i := 0; i < y; i++ {
+		result *= x
+	}
+	return result
+}
