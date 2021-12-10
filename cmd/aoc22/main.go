@@ -44,6 +44,7 @@ var done = map[int]Day{
 	6: &mission.Day6{},
 	7: &mission.Day7{},
 	8: &mission.Day8{},
+	9: &mission.Day9{},
 }
 
 func main() {
