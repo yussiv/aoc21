@@ -36,15 +36,16 @@ func runTasksForDay(day int, input []string) {
 }
 
 var done = map[int]Day{
-	1: &mission.Day1{},
-	2: &mission.Day2{},
-	3: &mission.Day3{},
-	4: &mission.Day4{},
-	5: &mission.Day5{},
-	6: &mission.Day6{},
-	7: &mission.Day7{},
-	8: &mission.Day8{},
-	9: &mission.Day9{},
+	1:  &mission.Day1{},
+	2:  &mission.Day2{},
+	3:  &mission.Day3{},
+	4:  &mission.Day4{},
+	5:  &mission.Day5{},
+	6:  &mission.Day6{},
+	7:  &mission.Day7{},
+	8:  &mission.Day8{},
+	9:  &mission.Day9{},
+	10: &mission.Day10{},
 }
 
 func main() {
