@@ -1,17 +1,17 @@
 package mission
 
 import (
-	"github.com/yussiv/aoc21/util"
+	"math/bits"
 )
 
 type Day16 struct {
 	input        []string
-	binaryInput  []uint
-	iWord        int
-	iArray       int
-	wordLength   int
-	iTotal       int
+	bitsRead     int
 	transmission *packet
+	hexInput     []rune
+	hexIndex     int
+	bitBuffer    uint
+	bufferSpace  int
 }
 
 type packet struct {
@@ -23,7 +23,9 @@ type packet struct {
 
 func (d *Day16) SetInput(input []string) {
 	d.input = input
-	d.parseInput()
+	d.hexInput = []rune(d.input[0])
+	d.bufferSpace = bits.UintSize
+	d.fillBuffer()
 	d.transmission = d.getPacket()
 }
 
@@ -110,9 +112,9 @@ func (d *Day16) getSubPacketsByCount(count int) []*packet {
 }
 
 func (d *Day16) getSubPacketsByLength(length int) []*packet {
-	iEnd := d.iTotal + length
+	lastBit := d.bitsRead + length
 	packets := make([]*packet, 0)
-	for d.iTotal < iEnd {
+	for d.bitsRead < lastBit {
 		packets = append(packets, d.getPacket())
 	}
 	return packets
@@ -132,45 +134,32 @@ func (d *Day16) getLiteral() int {
 }
 
 func (d *Day16) getNextBits(n int) uint {
-	result := uint(0)
-	mask := ^uint(0) << (d.wordLength - n)
-	word := d.binaryInput[d.iArray]
-	end := d.iWord + n
-	if diff := end - d.wordLength; diff > 0 {
-		result += (word & (mask >> d.iWord) << diff)
-		d.iArray++
-		word = d.binaryInput[d.iArray]
-		d.iWord = 0
-		result += (word & (mask << (n - diff))) >> (d.wordLength - diff)
-		d.iWord = diff
-	} else {
-		result += (word & (mask >> d.iWord)) >> (d.wordLength - d.iWord - n)
-		d.iWord += n
-	}
-	d.iTotal = d.iArray*d.wordLength + d.iWord
+	mask := ^uint(0) << (bits.UintSize - n)
+	result := (mask & d.bitBuffer) >> (bits.UintSize - n)
+	d.bitBuffer = d.bitBuffer << n
+	d.bufferSpace += n
+	d.bitsRead += n
+	d.fillBuffer()
 	return result
 }
 
-func (d *Day16) parseInput() {
-	d.wordLength = 64
-	hexPerWord := d.wordLength / 4
-	hexInput := d.input[0]
-	d.binaryInput = make([]uint, len(hexInput)/hexPerWord+1) // zero padding doesn't hurt
-	n := len(hexInput)
-	k := 0
-	for i := 0; i < n; i += hexPerWord {
-		section := hexInput[i:util.Min(i+hexPerWord, n)]
-		word := uint(0)
-		for j, r := range section {
-			var value uint
-			if r >= 'A' {
-				value = uint(10 + r - 'A')
-			} else {
-				value = uint(r - '0')
-			}
-			word += value << (4 * (hexPerWord - 1 - j))
-		}
-		d.binaryInput[k] = word
-		k++
+func (d *Day16) fillBuffer() {
+	for d.bufferSpace >= 4 {
+		nextHex := d.decodeNextHex()
+		d.bitBuffer += nextHex << (d.bufferSpace - 4)
+		d.bufferSpace -= 4
+	}
+}
+
+func (d *Day16) decodeNextHex() uint {
+	if d.hexIndex >= len(d.hexInput) {
+		return uint(0)
+	}
+	hex := d.hexInput[d.hexIndex]
+	d.hexIndex++
+	if hex >= 'A' {
+		return uint(10 + hex - 'A')
+	} else {
+		return uint(hex - '0')
 	}
 }
