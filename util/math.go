@@ -14,3 +14,10 @@ func IntPow(x, y int) int {
 	}
 	return result
 }
+
+func Min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
